@@ -1,23 +1,23 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+@variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-background: #ffffff;
+  --color-foreground: #171717;
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
 }
 
 body {
@@ -55,13 +55,12 @@ body {
 
 /* Markdown styling for chat messages */
 .prose {
-  color: white !important;
+  color: inherit;
 
   /* Reset margins for better spacing in chat bubbles */
   & p {
     margin-top: 0;
     margin-bottom: 0.5em;
-    color: white !important;
   }
 
   & p:last-child {
@@ -84,7 +83,6 @@ body {
     margin-top: 0.75em;
     margin-bottom: 0.5em;
     font-weight: 600;
-    color: white !important;
   }
 
   & h1:first-child, & h2:first-child, & h3:first-child,
@@ -97,13 +95,11 @@ body {
     margin-top: 0.5em;
     margin-bottom: 0.5em;
     padding-left: 1.5em;
-    color: white !important;
   }
 
   & li {
     margin-top: 0.25em;
     margin-bottom: 0.25em;
-    color: white !important;
   }
 
   /* Code blocks */
@@ -111,24 +107,21 @@ body {
     margin-top: 0.5em;
     margin-bottom: 0.5em;
     padding: 0.75em;
-    background-color: rgba(0, 0, 0, 0.3);
+    background-color: rgba(0, 0, 0, 0.1);
     border-radius: 0.375rem;
     overflow-x: auto;
-    color: white !important;
   }
 
   & code {
-    background-color: rgba(0, 0, 0, 0.3);
+    background-color: rgba(0, 0, 0, 0.1);
     padding: 0.125em 0.375em;
     border-radius: 0.25rem;
     font-size: 0.875em;
-    color: white !important;
   }
 
   & pre code {
     background-color: transparent;
     padding: 0;
-    color: white !important;
   }
 
   /* Blockquotes */
@@ -136,16 +129,15 @@ body {
     margin-top: 0.5em;
     margin-bottom: 0.5em;
     padding-left: 1em;
-    border-left: 3px solid rgba(255, 255, 255, 0.3);
+    border-left: 3px solid rgba(128, 128, 128, 0.3);
     font-style: italic;
-    color: white !important;
   }
 
   /* Horizontal rules */
   & hr {
     margin-top: 0.75em;
     margin-bottom: 0.75em;
-    border-color: rgba(255, 255, 255, 0.2);
+    border-color: rgba(128, 128, 128, 0.2);
   }
 
   /* Tables */
@@ -158,32 +150,47 @@ body {
 
   & th, & td {
     padding: 0.5em;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(128, 128, 128, 0.2);
   }
 
   & th {
-    background-color: rgba(0, 0, 0, 0.3);
+    background-color: rgba(0, 0, 0, 0.1);
     font-weight: 600;
   }
 
   /* Strong and emphasis */
   & strong {
     font-weight: 700;
-    color: white !important;
   }
 
   & em {
     font-style: italic;
-    color: white !important;
+  }
+}
+
+/* Dark mode specific prose styles */
+.dark .prose {
+  & pre {
+    background-color: rgba(0, 0, 0, 0.3);
   }
 
-  /* Ensure all text is white */
-  & * {
-    color: inherit;
+  & code {
+    background-color: rgba(0, 0, 0, 0.3);
   }
 
-  /* Table text */
-  & td, & th {
-    color: white !important;
+  & blockquote {
+    border-left-color: rgba(255, 255, 255, 0.3);
+  }
+
+  & hr {
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  & th, & td {
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  & th {
+    background-color: rgba(0, 0, 0, 0.3);
   }
 }

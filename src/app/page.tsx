@@ -7,6 +7,7 @@ import { useGeolocation } from '@ce-ai/hooks/useGeolocation';
 import { ChatList } from '@ce-ai/components/ChatList';
 import { ChatWindow } from '@ce-ai/components/ChatWindow';
 import { MessageInput } from '@ce-ai/components/MessageInput';
+import { ThemeToggle } from '@ce-ai/components/ThemeToggle';
 import { Chat } from '@ce-ai/types/chat';
 
 function HomeContent() {
@@ -113,10 +114,10 @@ function HomeContent() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-950">
+      <div className="flex h-screen items-center justify-center bg-white dark:bg-gray-950">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-400">Initializing session...</p>
+          <p className="text-gray-600 dark:text-gray-400">Initializing session...</p>
         </div>
       </div>
     );
@@ -124,7 +125,7 @@ function HomeContent() {
 
   if (error) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-950">
+      <div className="flex h-screen items-center justify-center bg-white dark:bg-gray-950">
         <div className="text-center text-red-500">
           <p>Error: {error}</p>
         </div>
@@ -133,13 +134,15 @@ function HomeContent() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-950 text-white relative overflow-hidden">
-      {/* Hamburger Menu Button - Mobile Only */}
-      <button
-        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 bg-gray-800 p-2 rounded-lg hover:bg-gray-700 transition-colors"
-        aria-label="Toggle menu"
-      >
+    <div className="flex h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-white relative overflow-hidden transition-colors">
+      {/* Top Left Controls */}
+      <div className="fixed top-4 left-4 z-50 flex gap-2">
+        {/* Hamburger Menu Button - Mobile Only */}
+        <button
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="lg:hidden bg-gray-200 dark:bg-gray-800 p-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors shadow-md border border-gray-300 dark:border-gray-600"
+          aria-label="Toggle menu"
+        >
         <svg
           className="w-6 h-6"
           fill="none"
@@ -162,7 +165,9 @@ function HomeContent() {
             />
           )}
         </svg>
-      </button>
+        </button>
+        <ThemeToggle />
+      </div>
 
       {/* Mobile Overlay */}
       {isSidebarOpen && (
@@ -251,10 +256,10 @@ export default function Home() {
   return (
     <Suspense
       fallback={
-        <div className="flex h-screen items-center justify-center bg-gray-950">
+        <div className="flex h-screen items-center justify-center bg-white dark:bg-gray-950">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-            <p className="text-gray-400">Loading...</p>
+            <p className="text-gray-600 dark:text-gray-400">Loading...</p>
           </div>
         </div>
       }

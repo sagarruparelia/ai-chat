@@ -29,10 +29,10 @@ export function ChatWindow({ chat, streamStatus, streamingContent }: ChatWindowP
 
   if (!chat) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-gray-950 p-4">
-        <div className="text-center text-gray-500 max-w-md">
+      <div className="flex-1 flex items-center justify-center bg-white dark:bg-gray-950 p-4">
+        <div className="text-center text-gray-500 dark:text-gray-500 max-w-md">
           <svg
-            className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 text-gray-700"
+            className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 text-gray-400 dark:text-gray-700"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -45,24 +45,24 @@ export function ChatWindow({ chat, streamStatus, streamingContent }: ChatWindowP
             />
           </svg>
           <p className="text-base md:text-lg mb-2">Ready to start chatting!</p>
-          <p className="text-xs md:text-sm text-gray-600">Type your message below to begin a new conversation</p>
+          <p className="text-xs md:text-sm text-gray-600 dark:text-gray-600">Type your message below to begin a new conversation</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-gray-950 min-h-0 overflow-hidden">
-      <div className="border-b border-gray-700 p-3 md:p-4 bg-gray-900 flex-shrink-0">
-        <h2 className="text-base md:text-lg font-semibold text-white truncate">{chat.title}</h2>
-        <p className="text-xs md:text-sm text-gray-400">
+    <div className="flex-1 flex flex-col bg-white dark:bg-gray-950 min-h-0 overflow-hidden">
+      <div className="border-b border-gray-300 dark:border-gray-700 p-3 md:p-4 bg-gray-100 dark:bg-gray-900 flex-shrink-0">
+        <h2 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white truncate">{chat.title}</h2>
+        <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
           {new Date(chat.createdAt).toLocaleDateString()}
         </p>
       </div>
 
       <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 md:p-4 space-y-3 md:space-y-4">
         {chat.messages.length === 0 && !streamingContent ? (
-          <div className="text-center text-gray-500 mt-8">
+          <div className="text-center text-gray-500 dark:text-gray-500 mt-8">
             <p>No messages yet. Start the conversation!</p>
           </div>
         ) : (
@@ -78,13 +78,13 @@ export function ChatWindow({ chat, streamStatus, streamingContent }: ChatWindowP
                   className={`max-w-[85%] sm:max-w-[75%] lg:max-w-[70%] rounded-lg px-3 py-2 md:px-4 shadow-lg ${
                     message.role === 'user'
                       ? 'bg-blue-600 text-white'
-                      : 'bg-slate-700 border border-slate-600'
+                      : 'bg-gray-200 dark:bg-slate-700 border border-gray-300 dark:border-slate-600'
                   }`}
                 >
                   <div className={`text-xs sm:text-sm prose max-w-none ${
-                    message.role === 'user' ? 'prose-invert' : 'prose-slate'
+                    message.role === 'user' ? 'prose-invert' : ''
                   }`}>
-                    <div className="text-white">
+                    <div className={message.role === 'user' ? 'text-white' : 'text-gray-900 dark:text-white'}>
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
                         {processContent(message.content)}
                       </ReactMarkdown>
@@ -92,7 +92,7 @@ export function ChatWindow({ chat, streamStatus, streamingContent }: ChatWindowP
                   </div>
                   <div
                     className={`text-[10px] sm:text-xs mt-1 ${
-                      message.role === 'user' ? 'text-blue-200' : 'text-slate-300'
+                      message.role === 'user' ? 'text-blue-200' : 'text-gray-600 dark:text-slate-300'
                     }`}
                   >
                     {new Date(message.timestamp).toLocaleTimeString()}
@@ -104,17 +104,17 @@ export function ChatWindow({ chat, streamStatus, streamingContent }: ChatWindowP
             {/* Streaming message */}
             {streamStatus === 'streaming' && (
               <div className="flex justify-start">
-                <div className="max-w-[85%] sm:max-w-[75%] lg:max-w-[70%] rounded-lg px-3 py-2 md:px-4 bg-slate-700 border border-slate-600 shadow-lg">
+                <div className="max-w-[85%] sm:max-w-[75%] lg:max-w-[70%] rounded-lg px-3 py-2 md:px-4 bg-gray-200 dark:bg-slate-700 border border-gray-300 dark:border-slate-600 shadow-lg">
                   {streamingContent ? (
                     <>
-                      <div className="text-xs sm:text-sm prose prose-slate max-w-none">
-                        <div className="text-white">
+                      <div className="text-xs sm:text-sm prose max-w-none">
+                        <div className="text-gray-900 dark:text-white">
                           <ReactMarkdown remarkPlugins={[remarkGfm]}>
                             {processContent(streamingContent)}
                           </ReactMarkdown>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1 md:gap-2 text-[10px] sm:text-xs mt-2 text-blue-400">
+                      <div className="flex items-center gap-1 md:gap-2 text-[10px] sm:text-xs mt-2 text-blue-500 dark:text-blue-400">
                         <div className="flex gap-1">
                           <span className="animate-pulse">●</span>
                           <span className="animate-pulse delay-75">●</span>
@@ -124,7 +124,7 @@ export function ChatWindow({ chat, streamStatus, streamingContent }: ChatWindowP
                       </div>
                     </>
                   ) : (
-                    <div className="flex items-center gap-1 md:gap-2 text-[10px] sm:text-xs text-slate-300">
+                    <div className="flex items-center gap-1 md:gap-2 text-[10px] sm:text-xs text-gray-600 dark:text-slate-300">
                       <div className="flex gap-1">
                         <span className="animate-bounce">●</span>
                         <span className="animate-bounce delay-75">●</span>
