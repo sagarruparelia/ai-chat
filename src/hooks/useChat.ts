@@ -1,7 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { fetchEventSource, EventSourceMessage } from '@microsoft/fetch-event-source';
 import { Chat, Message, User, Session, StreamStatus } from '@ce-ai/types/chat';
+
+// Custom error classes for controlling retry behavior with fetch-event-source
+class FatalError extends Error { }
+class RetriableError extends Error { }
 
 export function useChat() {
   const [user, setUser] = useState<User | null>(null);
@@ -81,47 +86,51 @@ export function useChat() {
     }
   }, []);
 
-  // Send message with streaming support
+  // Send message with streaming support using @microsoft/fetch-event-source
   const sendMessage = useCallback(async (chatId: string, content: string, lat?: number, lng?: number) => {
-    try {
-      // Create optimistic user message
-      const optimisticUserMessage: Message = {
-        id: `temp-${Date.now()}`,
-        role: 'user',
-        content,
-        timestamp: new Date().toISOString(),
+    // Create optimistic user message
+    const optimisticUserMessage: Message = {
+      id: `temp-${Date.now()}`,
+      chatId,
+      role: 'user',
+      content,
+      timestamp: new Date(),
+    };
+
+    // Add user message to chat immediately (optimistic update)
+    setCurrentChat((prev) => {
+      if (!prev || prev.id !== chatId) return prev;
+      return {
+        ...prev,
+        messages: [...prev.messages, optimisticUserMessage],
       };
+    });
 
-      // Add user message to chat immediately (optimistic update)
-      setCurrentChat((prev) => {
-        if (!prev || prev.id !== chatId) return prev;
-        return {
-          ...prev,
-          messages: [...prev.messages, optimisticUserMessage],
-        };
-      });
+    // Also update in chats array (for new chats where currentChat might not be set yet)
+    setChats((prev) =>
+      prev.map((chat) => {
+        if (chat.id === chatId) {
+          return {
+            ...chat,
+            messages: [...chat.messages, optimisticUserMessage],
+          };
+        }
+        return chat;
+      })
+    );
 
-      // Also update in chats array (for new chats where currentChat might not be set yet)
-      setChats((prev) =>
-        prev.map((chat) => {
-          if (chat.id === chatId) {
-            return {
-              ...chat,
-              messages: [...chat.messages, optimisticUserMessage],
-            };
-          }
-          return chat;
-        })
-      );
+    // Reset streaming state
+    setStreamStatus('streaming');
+    setStreamingContent('');
 
-      // Reset streaming state
-      setStreamStatus('streaming');
-      setStreamingContent('');
+    // Create abort controller for cancellation
+    abortControllerRef.current = new AbortController();
 
-      // Create abort controller for cancellation
-      abortControllerRef.current = new AbortController();
+    let userMessage: Message | null = null;
+    let assistantMessage: Message | null = null;
 
-      const response = await fetch('/api/messages', {
+    try {
+      await fetchEventSource('/api/messages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -129,129 +138,126 @@ export function useChat() {
         credentials: 'include',
         body: JSON.stringify({ chatId, content, lat, lng }),
         signal: abortControllerRef.current.signal,
-      });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      if (!response.body) {
-        throw new Error('No response body');
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-
-      let buffer = '';
-      let userMessage: Message | null = null;
-      let assistantMessage: Message | null = null;
-
-      while (true) {
-        const { done, value } = await reader.read();
-
-        if (done) {
-          setStreamStatus('complete');
-          break;
-        }
-
-        const chunk = decoder.decode(value, { stream: true });
-        buffer += chunk;
-
-        // Process Server-Sent Events
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6).trim();
-
-            if (!data) continue;
-
-            try {
-              const event = JSON.parse(data);
-
-              switch (event.type) {
-                case 'user_message':
-                  userMessage = event.data;
-                  // Replace optimistic message with real one from server in currentChat
-                  setCurrentChat((prev) => {
-                    if (!prev || prev.id !== chatId) return prev;
-                    // Filter out temp messages and add the real one
-                    const messagesWithoutTemp = prev.messages.filter((msg) => !msg.id.startsWith('temp-'));
-                    return {
-                      ...prev,
-                      messages: [...messagesWithoutTemp, event.data],
-                    };
-                  });
-
-                  // Also update in chats array
-                  setChats((prev) =>
-                    prev.map((chat) => {
-                      if (chat.id === chatId) {
-                        const messagesWithoutTemp = chat.messages.filter((msg) => !msg.id.startsWith('temp-'));
-                        return {
-                          ...chat,
-                          messages: [...messagesWithoutTemp, event.data],
-                        };
-                      }
-                      return chat;
-                    })
-                  );
-                  break;
-
-                case 'stream_start':
-                  setStreamStatus('streaming');
-                  break;
-
-                case 'chunk':
-                  // Accumulate streaming content
-                  setStreamingContent((prev) => prev + event.data);
-                  break;
-
-                case 'stream_complete':
-                  assistantMessage = event.data;
-                  setStreamStatus('complete');
-                  setStreamingContent('');
-
-                  // Add final assistant message to currentChat
-                  setCurrentChat((prev) => {
-                    if (!prev || prev.id !== chatId) return prev;
-                    return {
-                      ...prev,
-                      messages: [...prev.messages, event.data],
-                    };
-                  });
-
-                  // Also add to chats array
-                  setChats((prev) =>
-                    prev.map((chat) => {
-                      if (chat.id === chatId) {
-                        return {
-                          ...chat,
-                          messages: [...chat.messages, event.data],
-                        };
-                      }
-                      return chat;
-                    })
-                  );
-
-                  // Reset status to idle after 2 seconds
-                  setTimeout(() => {
-                    setStreamStatus('idle');
-                  }, 2000);
-                  break;
-
-                case 'error':
-                  setStreamStatus('error');
-                  setError(event.error || 'Stream error');
-                  break;
-              }
-            } catch (e) {
-              console.error('Failed to parse SSE event:', e);
-            }
+        async onopen(response) {
+          if (response.ok) {
+            return; // Connection successful
           }
-        }
-      }
+
+          // Handle client errors (4xx) - don't retry except for 429 (rate limit)
+          if (response.status >= 400 && response.status < 500 && response.status !== 429) {
+            const error = await response.text();
+            console.error('Client error:', error);
+            throw new FatalError(`Client error: ${response.status}`);
+          }
+
+          // Handle server errors (5xx) - will retry
+          throw new Error(`Server error: ${response.status}`);
+        },
+
+        onmessage(event: EventSourceMessage) {
+          // Parse the SSE event data
+          try {
+            const data = JSON.parse(event.data);
+
+            switch (data.type) {
+              case 'user_message':
+                userMessage = data.data;
+                // Replace optimistic message with real one from server in currentChat
+                setCurrentChat((prev) => {
+                  if (prev?.id !== chatId) return prev;
+                  const messagesWithoutTemp = prev.messages.filter((msg) => !msg.id.startsWith('temp-'));
+                  return {
+                    ...prev,
+                    messages: [...messagesWithoutTemp, data.data],
+                  };
+                });
+
+                // Also update in chats array
+                setChats((prev) =>
+                  prev.map((chat) => {
+                    if (chat.id === chatId) {
+                      const messagesWithoutTemp = chat.messages.filter((msg) => !msg.id.startsWith('temp-'));
+                      return {
+                        ...chat,
+                        messages: [...messagesWithoutTemp, data.data],
+                      };
+                    }
+                    return chat;
+                  })
+                );
+                break;
+
+              case 'stream_start':
+                setStreamStatus('streaming');
+                break;
+
+              case 'chunk':
+                // Accumulate streaming content
+                setStreamingContent((prev) => prev + data.data);
+                break;
+
+              case 'stream_complete':
+                assistantMessage = data.data;
+                setStreamStatus('complete');
+                setStreamingContent('');
+
+                // Add final assistant message to currentChat
+                setCurrentChat((prev) => {
+                  if (!prev || prev.id !== chatId) return prev;
+                  return {
+                    ...prev,
+                    messages: [...prev.messages, data.data],
+                  };
+                });
+
+                // Also add to chats array
+                setChats((prev) =>
+                  prev.map((chat) => {
+                    if (chat.id === chatId) {
+                      return {
+                        ...chat,
+                        messages: [...chat.messages, data.data],
+                      };
+                    }
+                    return chat;
+                  })
+                );
+
+                // Reset status to idle after 2 seconds
+                setTimeout(() => {
+                  setStreamStatus('idle');
+                }, 2000);
+                break;
+
+              case 'error':
+                setStreamStatus('error');
+                setError(data.error || 'Stream error');
+                throw new FatalError(data.error || 'Stream error');
+            }
+          } catch (parseError) {
+            console.error('Failed to parse SSE event:', parseError);
+            // Don't throw - just log and continue
+          }
+        },
+
+        onclose() {
+          // Server closed the connection - this is normal after stream completes
+          setStreamStatus('complete');
+        },
+
+        onerror(err) {
+          console.error('SSE error:', err);
+
+          // If it's a fatal error, stop retrying
+          if (err instanceof FatalError) {
+            throw err;
+          }
+
+          // For other errors, let the library handle retry logic
+          // The library will automatically retry with exponential backoff
+        },
+      });
 
       // Messages are already added to chats via optimistic updates and event handlers
       return { userMessage, assistantMessage };
