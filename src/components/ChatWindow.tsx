@@ -18,6 +18,11 @@ export function ChatWindow({ chat, streamStatus, streamingContent }: ChatWindowP
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Convert literal \n to actual newlines for proper markdown rendering
+  const processContent = (content: string): string => {
+    return content.replace(/\\n/g, '\n');
+  };
+
   useEffect(() => {
     scrollToBottom();
   }, [chat?.messages, streamingContent]);
@@ -78,7 +83,7 @@ export function ChatWindow({ chat, streamStatus, streamingContent }: ChatWindowP
                 >
                   <div className="text-xs sm:text-sm prose max-w-none">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {message.content}
+                      {processContent(message.content)}
                     </ReactMarkdown>
                   </div>
                   <div
@@ -100,7 +105,7 @@ export function ChatWindow({ chat, streamStatus, streamingContent }: ChatWindowP
                     <>
                       <div className="text-xs sm:text-sm prose max-w-none">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                          {streamingContent}
+                          {processContent(streamingContent)}
                         </ReactMarkdown>
                       </div>
                       <div className="flex items-center gap-1 md:gap-2 text-[10px] sm:text-xs mt-2 text-blue-400">

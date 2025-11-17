@@ -36,6 +36,7 @@ function HomeContent() {
     error: geoError,
     hasPermission,
     requestLocation,
+    source: locationSource,
   } = useGeolocation();
 
   // Load chat from URL or set up new chat mode
@@ -77,8 +78,14 @@ function HomeContent() {
   };
 
   const handleSendMessage = async (content: string) => {
+    // Wait for location if it's still loading
+    if (geoLoading) {
+      alert('Getting your location, please wait...');
+      return;
+    }
+
     if (!coordinates) {
-      alert('Location is required to send messages. Please enable location access.');
+      alert('Unable to get location. Please check your connection and try again.');
       requestLocation();
       return;
     }
@@ -182,12 +189,12 @@ function HomeContent() {
         />
         <MessageInput
           onSendMessage={handleSendMessage}
-          disabled={streamStatus === 'streaming' || !coordinates}
+          disabled={streamStatus === 'streaming' || geoLoading}
           disabledMessage={
             streamStatus === 'streaming'
               ? 'Please wait for response...'
-              : !coordinates
-              ? 'Location required - enable location access'
+              : geoLoading
+              ? 'Getting location...'
               : undefined
           }
         />
@@ -229,7 +236,9 @@ function HomeContent() {
 
         {coordinates && !geoError && (
           <div className="text-[10px] md:text-xs text-green-500 bg-gray-900 px-2 py-1 md:px-3 rounded-lg">
-            <span className="hidden sm:inline">✓ Location enabled</span>
+            <span className="hidden sm:inline">
+              ✓ Location {locationSource === 'browser' ? '(GPS)' : '(IP-based)'}
+            </span>
             <span className="sm:hidden">✓</span>
           </div>
         )}

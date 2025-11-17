@@ -12,6 +12,7 @@ interface GeolocationState {
   loading: boolean;
   error: string | null;
   hasPermission: boolean;
+  source: 'browser' | 'ip' | null;
 }
 
 export function useGeolocation() {
@@ -20,16 +21,53 @@ export function useGeolocation() {
     loading: true,
     error: null,
     hasPermission: false,
+    source: null,
   });
 
-  const requestLocation = () => {
-    if (!navigator.geolocation) {
+  // Fallback to IP-based geolocation
+  const getLocationFromIP = async () => {
+    try {
+      setState((prev) => ({ ...prev, loading: true, error: null }));
+
+      // Using ipapi.co free tier (no API key required, 1000 requests/day)
+      const response = await fetch('https://ipapi.co/json/');
+
+      if (!response.ok) {
+        throw new Error('IP geolocation service unavailable');
+      }
+
+      const data = await response.json();
+
+      if (data.latitude && data.longitude) {
+        setState({
+          coordinates: {
+            lat: data.latitude,
+            lng: data.longitude,
+          },
+          loading: false,
+          error: null,
+          hasPermission: false, // Not browser permission, but location obtained
+          source: 'ip',
+        });
+      } else {
+        throw new Error('Invalid IP geolocation data');
+      }
+    } catch (err) {
       setState({
         coordinates: null,
         loading: false,
-        error: 'Geolocation is not supported by your browser',
+        error: 'Failed to get location from IP. Please enable browser location.',
         hasPermission: false,
+        source: null,
       });
+    }
+  };
+
+  const requestLocation = () => {
+    if (!navigator.geolocation) {
+      // Browser doesn't support geolocation, fall back to IP
+      console.log('Geolocation not supported, using IP location');
+      getLocationFromIP();
       return;
     }
 
@@ -45,6 +83,7 @@ export function useGeolocation() {
           loading: false,
           error: null,
           hasPermission: true,
+          source: 'browser',
         });
       },
       (error) => {
@@ -52,22 +91,19 @@ export function useGeolocation() {
 
         switch (error.code) {
           case error.PERMISSION_DENIED:
-            errorMessage = 'Location access denied. Please enable location permissions.';
+            errorMessage = 'Browser location denied, using approximate location';
             break;
           case error.POSITION_UNAVAILABLE:
-            errorMessage = 'Location information unavailable.';
+            errorMessage = 'Browser location unavailable, using approximate location';
             break;
           case error.TIMEOUT:
-            errorMessage = 'Location request timed out.';
+            errorMessage = 'Browser location timed out, using approximate location';
             break;
         }
 
-        setState({
-          coordinates: null,
-          loading: false,
-          error: errorMessage,
-          hasPermission: false,
-        });
+        console.log(`${errorMessage}, falling back to IP location`);
+        // Fall back to IP geolocation
+        getLocationFromIP();
       },
       {
         enableHighAccuracy: false,
