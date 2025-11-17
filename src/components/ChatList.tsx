@@ -8,6 +8,8 @@ interface ChatListProps {
   onSelectChat: (chat: Chat) => void;
   onDeleteChat: (chatId: string) => void;
   onNewChat: () => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 export function ChatList({
@@ -16,10 +18,20 @@ export function ChatList({
   onSelectChat,
   onDeleteChat,
   onNewChat,
+  isOpen,
+  onClose,
 }: ChatListProps) {
   return (
-    <div className="w-64 bg-gray-900 border-r border-gray-800 flex flex-col">
-      <div className="p-4 border-b border-gray-800">
+    <div
+      className={`
+        fixed lg:static inset-y-0 left-0 z-40
+        w-64 bg-gray-900 border-r border-gray-800 flex flex-col
+        transform transition-transform duration-300 ease-in-out
+        h-screen overflow-hidden
+        ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}
+    >
+      <div className="p-4 border-b border-gray-800 flex-shrink-0">
         <button
           onClick={onNewChat}
           className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
@@ -28,7 +40,7 @@ export function ChatList({
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden">
         {chats.length === 0 ? (
           <div className="p-4 text-gray-500 text-sm text-center">
             No chats yet. Start a new conversation!

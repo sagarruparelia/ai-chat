@@ -1,6 +1,20 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## AI Chat Application
+
+A real-time chat application with location-based features and streaming AI responses.
+
+### Features
+
+- Real-time streaming chat responses
+- Location-based messaging (requires geolocation permission)
+- Session-based user management
+- Mobile-responsive design with sidebar toggle
+- Mock service mode for testing without external API
+
 ## Getting Started
+
+### Development Server
 
 First, run the development server:
 
@@ -16,9 +30,39 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Chat Service Configuration
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+By default, the application runs in **mock mode** and doesn't require any external chat API. This is perfect for testing and development.
+
+#### Using Mock Mode (Default)
+
+No configuration needed! The app will automatically use a mock streaming service that echoes your messages.
+
+#### Connecting to a Real Chat API
+
+To connect to your own chat service:
+
+1. Copy `.env.example` to `.env.local`:
+   ```bash
+   cp .env.example .env.local
+   ```
+
+2. Edit `.env.local` and set your chat service URL:
+   ```bash
+   CHAT_SERVICE_URL=https://your-domain.com/api/chat
+   ```
+
+3. Restart the development server
+
+**Chat API Requirements:**
+- Method: `POST`
+- Request body: `{ session_id: string, prompt: string, lat: number, lng: number }`
+- Response: Server-Sent Events (SSE) stream with `data: <content>` format
+- End marker: `data: [DONE]`
+
+### Location Permission
+
+The app requires geolocation access to send messages. When you first load the app, your browser will prompt you to allow location access.
 
 ## Learn More
 

@@ -7,7 +7,18 @@ const USER_COOKIE_NAME = 'ai-chat-user-id';
 const SESSION_COOKIE_NAME = 'ai-chat-session-id';
 
 // Configure your chat service endpoint here
-const CHAT_SERVICE_URL = process.env.CHAT_SERVICE_URL || 'https://abc.com/<chat-service>/v1/chat';
+const CHAT_SERVICE_URL = process.env.CHAT_SERVICE_URL;
+const USE_MOCK_SERVICE = !CHAT_SERVICE_URL || CHAT_SERVICE_URL.includes('abc.com');
+
+// Helper function to remove surrounding quotes from content
+function stripQuotes(content: string): string {
+  const trimmed = content.trim();
+  if ((trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+      (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
+    return trimmed.slice(1, -1);
+  }
+  return content;
+}
 
 // Send a message to a chat with streaming response
 export async function POST(request: NextRequest) {
@@ -79,35 +90,13 @@ export async function POST(request: NextRequest) {
             encoder.encode(`data: ${JSON.stringify({ type: 'user_message', data: userMessage })}\n\n`)
           );
 
-          // Call the external chat service
+          // Call the external chat service or use mock
           let chatResponse: Response;
 
-          try {
-            chatResponse = await fetch(CHAT_SERVICE_URL, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                session_id: sessionId,
-                prompt: content,
-                lat,
-                lng,
-              }),
-            });
+          if (USE_MOCK_SERVICE) {
+            // Use mock streaming response for testing
+            console.log('Using mock chat service (configure CHAT_SERVICE_URL to use real service)');
 
-            if (!chatResponse.ok) {
-              throw new Error(`Chat service error: ${chatResponse.status}`);
-            }
-
-            if (!chatResponse.body) {
-              throw new Error('No response body from chat service');
-            }
-          } catch (fetchError) {
-            // Fallback to mock streaming for testing if service unavailable
-            console.warn('Chat service unavailable, using mock response:', fetchError);
-
-            // Create mock streaming response for testing
             const mockResponse = `I received your message: "${content}"\n\nLocation: ${lat.toFixed(4)}, ${lng.toFixed(4)}\n\nThis is a mock streaming response for testing. Configure CHAT_SERVICE_URL environment variable to connect to your real chat API.`;
 
             const mockStream = new ReadableStream({
@@ -132,6 +121,34 @@ export async function POST(request: NextRequest) {
             chatResponse = new Response(mockStream, {
               headers: { 'Content-Type': 'text/event-stream' },
             });
+          } else {
+            // Call real chat service
+            try {
+              chatResponse = await fetch(CHAT_SERVICE_URL!, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  session_id: sessionId,
+                  prompt: content,
+                  lat,
+                  lng,
+                }),
+              });
+
+              if (!chatResponse.ok) {
+                throw new Error(`Chat service error: ${chatResponse.status}`);
+              }
+
+              if (!chatResponse.body) {
+                throw new Error('No response body from chat service');
+              }
+            } catch (fetchError) {
+              // Log error and throw to be handled by outer catch
+              console.error('Chat service error:', fetchError);
+              throw new Error('Failed to connect to chat service');
+            }
           }
 
           if (!chatResponse.body) {
@@ -174,12 +191,15 @@ export async function POST(request: NextRequest) {
 
             for (const line of lines) {
               if (line.startsWith('data: ')) {
-                const content = line.slice(6); // Remove "data: " prefix
+                let content = line.slice(6); // Remove "data: " prefix
 
                 // Skip [DONE] marker or empty lines
                 if (content === '[DONE]' || content.trim() === '') {
                   continue;
                 }
+
+                // Remove surrounding quotes if present
+                content = stripQuotes(content);
 
                 // Accumulate the actual content
                 fullResponse += content;
