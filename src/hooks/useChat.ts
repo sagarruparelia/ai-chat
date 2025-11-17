@@ -84,6 +84,36 @@ export function useChat() {
   // Send message with streaming support
   const sendMessage = useCallback(async (chatId: string, content: string, lat?: number, lng?: number) => {
     try {
+      // Create optimistic user message
+      const optimisticUserMessage: Message = {
+        id: `temp-${Date.now()}`,
+        role: 'user',
+        content,
+        timestamp: new Date().toISOString(),
+      };
+
+      // Add user message to chat immediately (optimistic update)
+      setCurrentChat((prev) => {
+        if (!prev || prev.id !== chatId) return prev;
+        return {
+          ...prev,
+          messages: [...prev.messages, optimisticUserMessage],
+        };
+      });
+
+      // Also update in chats array (for new chats where currentChat might not be set yet)
+      setChats((prev) =>
+        prev.map((chat) => {
+          if (chat.id === chatId) {
+            return {
+              ...chat,
+              messages: [...chat.messages, optimisticUserMessage],
+            };
+          }
+          return chat;
+        })
+      );
+
       // Reset streaming state
       setStreamStatus('streaming');
       setStreamingContent('');
@@ -143,14 +173,30 @@ export function useChat() {
               switch (event.type) {
                 case 'user_message':
                   userMessage = event.data;
-                  // Add user message to chat immediately
+                  // Replace optimistic message with real one from server in currentChat
                   setCurrentChat((prev) => {
                     if (!prev || prev.id !== chatId) return prev;
+                    // Filter out temp messages and add the real one
+                    const messagesWithoutTemp = prev.messages.filter((msg) => !msg.id.startsWith('temp-'));
                     return {
                       ...prev,
-                      messages: [...prev.messages, event.data],
+                      messages: [...messagesWithoutTemp, event.data],
                     };
                   });
+
+                  // Also update in chats array
+                  setChats((prev) =>
+                    prev.map((chat) => {
+                      if (chat.id === chatId) {
+                        const messagesWithoutTemp = chat.messages.filter((msg) => !msg.id.startsWith('temp-'));
+                        return {
+                          ...chat,
+                          messages: [...messagesWithoutTemp, event.data],
+                        };
+                      }
+                      return chat;
+                    })
+                  );
                   break;
 
                 case 'stream_start':
@@ -167,7 +213,7 @@ export function useChat() {
                   setStreamStatus('complete');
                   setStreamingContent('');
 
-                  // Add final assistant message to chat
+                  // Add final assistant message to currentChat
                   setCurrentChat((prev) => {
                     if (!prev || prev.id !== chatId) return prev;
                     return {
@@ -175,6 +221,19 @@ export function useChat() {
                       messages: [...prev.messages, event.data],
                     };
                   });
+
+                  // Also add to chats array
+                  setChats((prev) =>
+                    prev.map((chat) => {
+                      if (chat.id === chatId) {
+                        return {
+                          ...chat,
+                          messages: [...chat.messages, event.data],
+                        };
+                      }
+                      return chat;
+                    })
+                  );
 
                   // Reset status to idle after 2 seconds
                   setTimeout(() => {
@@ -194,23 +253,31 @@ export function useChat() {
         }
       }
 
-      // Update chats list
-      if (userMessage && assistantMessage) {
-        setChats((prev) =>
-          prev.map((chat) => {
-            if (chat.id === chatId) {
-              return {
-                ...chat,
-                messages: [...chat.messages, userMessage!, assistantMessage!],
-              };
-            }
-            return chat;
-          })
-        );
-      }
-
+      // Messages are already added to chats via optimistic updates and event handlers
       return { userMessage, assistantMessage };
     } catch (err) {
+      // Remove optimistic message on error from currentChat
+      setCurrentChat((prev) => {
+        if (!prev || prev.id !== chatId) return prev;
+        return {
+          ...prev,
+          messages: prev.messages.filter((msg) => !msg.id.startsWith('temp-')),
+        };
+      });
+
+      // Remove optimistic message from chats array
+      setChats((prev) =>
+        prev.map((chat) => {
+          if (chat.id === chatId) {
+            return {
+              ...chat,
+              messages: chat.messages.filter((msg) => !msg.id.startsWith('temp-')),
+            };
+          }
+          return chat;
+        })
+      );
+
       if (err instanceof Error && err.name === 'AbortError') {
         console.log('Stream cancelled');
         setStreamStatus('idle');
@@ -230,6 +297,23 @@ export function useChat() {
       abortControllerRef.current.abort();
       setStreamStatus('idle');
       setStreamingContent('');
+
+      // Remove optimistic message if stream was cancelled from currentChat
+      setCurrentChat((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          messages: prev.messages.filter((msg) => !msg.id.startsWith('temp-')),
+        };
+      });
+
+      // Remove optimistic message from chats array
+      setChats((prev) =>
+        prev.map((chat) => ({
+          ...chat,
+          messages: chat.messages.filter((msg) => !msg.id.startsWith('temp-')),
+        }))
+      );
     }
   }, []);
 

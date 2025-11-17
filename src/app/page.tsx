@@ -1,17 +1,18 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useChat } from '@ce-ai/hooks/useChat';
 import { useGeolocation } from '@ce-ai/hooks/useGeolocation';
 import { ChatList } from '@ce-ai/components/ChatList';
 import { ChatWindow } from '@ce-ai/components/ChatWindow';
-import { MessageInput } from '@ce-ai/components/MessageInput';
+import { MessageInput, MessageInputRef } from '@ce-ai/components/MessageInput';
 import { ThemeToggle } from '@ce-ai/components/ThemeToggle';
 import { Chat } from '@ce-ai/types/chat';
 
 function HomeContent() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const messageInputRef = useRef<MessageInputRef>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const chatIdFromUrl = searchParams.get('chat');
@@ -76,6 +77,10 @@ function HomeContent() {
     // Clear current chat and URL - enter new chat mode
     setCurrentChat(null);
     router.replace('/');
+    // Focus input for immediate typing
+    setTimeout(() => {
+      messageInputRef.current?.focus();
+    }, 100);
   };
 
   const handleSendMessage = async (content: string) => {
@@ -193,6 +198,7 @@ function HomeContent() {
           streamingContent={streamingContent}
         />
         <MessageInput
+          ref={messageInputRef}
           onSendMessage={handleSendMessage}
           disabled={streamStatus === 'streaming' || geoLoading}
           disabledMessage={

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, forwardRef, useImperativeHandle, useRef } from 'react';
 
 interface MessageInputProps {
   onSendMessage: (content: string) => void;
@@ -8,8 +8,20 @@ interface MessageInputProps {
   disabledMessage?: string;
 }
 
-export function MessageInput({ onSendMessage, disabled, disabledMessage }: MessageInputProps) {
+export interface MessageInputRef {
+  focus: () => void;
+}
+
+export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
+  function MessageInput({ onSendMessage, disabled, disabledMessage }, ref) {
   const [message, setMessage] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      inputRef.current?.focus();
+    },
+  }));
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -28,6 +40,7 @@ export function MessageInput({ onSendMessage, disabled, disabledMessage }: Messa
     <div className="border-t border-gray-300 dark:border-gray-700 p-3 md:p-4 bg-gray-100 dark:bg-gray-900 flex-shrink-0">
       <form onSubmit={handleSubmit} className="flex gap-2">
         <input
+          ref={inputRef}
           type="text"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
@@ -45,4 +58,4 @@ export function MessageInput({ onSendMessage, disabled, disabledMessage }: Messa
       </form>
     </div>
   );
-}
+});
