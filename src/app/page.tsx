@@ -73,6 +73,13 @@ function HomeContent() {
     }
   }, [currentChat, chatIdFromUrl]);
 
+  // Auto-focus input when response is complete
+  useEffect(() => {
+    if (streamStatus === 'complete' || streamStatus === 'idle') {
+      messageInputRef.current?.focus();
+    }
+  }, [streamStatus]);
+
   const handleNewChat = () => {
     // Clear current chat and URL - enter new chat mode
     setCurrentChat(null);
