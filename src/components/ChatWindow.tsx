@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Chat, StreamStatus } from '@ce-ai/types/chat';
 
 interface ChatWindowProps {
@@ -74,8 +76,10 @@ export function ChatWindow({ chat, streamStatus, streamingContent }: ChatWindowP
                       : 'bg-gray-800 text-gray-100'
                   }`}
                 >
-                  <div className="text-xs sm:text-sm whitespace-pre-wrap break-words">
-                    {message.content}
+                  <div className="text-xs sm:text-sm prose max-w-none">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {message.content}
+                    </ReactMarkdown>
                   </div>
                   <div
                     className={`text-[10px] sm:text-xs mt-1 ${
@@ -94,8 +98,10 @@ export function ChatWindow({ chat, streamStatus, streamingContent }: ChatWindowP
                 <div className="max-w-[85%] sm:max-w-[75%] lg:max-w-[70%] rounded-lg px-3 py-2 md:px-4 bg-gray-800 text-gray-100">
                   {streamingContent ? (
                     <>
-                      <div className="text-xs sm:text-sm whitespace-pre-wrap break-words">
-                        {streamingContent}
+                      <div className="text-xs sm:text-sm prose max-w-none">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {streamingContent}
+                        </ReactMarkdown>
                       </div>
                       <div className="flex items-center gap-1 md:gap-2 text-[10px] sm:text-xs mt-2 text-blue-400">
                         <div className="flex gap-1">
