@@ -63,8 +63,8 @@ export async function POST(request: NextRequest) {
 
     const body: CreateChatRequest = await request.json();
 
-    // Create new chat
-    const chat = storage.createChat(userId, sessionId, body.title);
+    // Create new chat (chatId will be the sessionId)
+    const chat = storage.createChat(userId, body.title);
 
     return NextResponse.json<ApiResponse>({
       success: true,

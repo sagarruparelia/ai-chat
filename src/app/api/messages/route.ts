@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
                   'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                  session_id: sessionId,
+                  session_id: chatId, // Use chatId as session_id (each chat is its own session)
                   prompt: content,
                   lat,
                   lng,

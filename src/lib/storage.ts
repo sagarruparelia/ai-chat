@@ -59,11 +59,13 @@ class InMemoryStorage {
   }
 
   // Chat operations
-  createChat(userId: string, sessionId: string, title?: string): Chat {
+  // Each chat is its own session - chatId === sessionId
+  createChat(userId: string, title?: string): Chat {
+    const chatId = uuidv4();
     const chat: Chat = {
-      id: uuidv4(),
+      id: chatId,
       userId,
-      sessionId,
+      sessionId: chatId, // chatId and sessionId are the same
       title: title || `Chat ${new Date().toLocaleDateString()}`,
       messages: [],
       createdAt: new Date(),

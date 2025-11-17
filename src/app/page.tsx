@@ -202,10 +202,10 @@ function HomeContent() {
 
       {/* Status indicators */}
       <div className="fixed top-2 right-2 md:top-4 md:right-4 space-y-1 md:space-y-2 z-40 lg:absolute max-w-[calc(100vw-5rem)] md:max-w-none">
-        {user && (
+        {currentChat && (
           <div className="text-[10px] md:text-xs text-gray-300 bg-gray-800 border border-gray-700 px-2 py-1 md:px-3 rounded-lg truncate shadow-md">
-            <span className="hidden sm:inline">Session: </span>
-            {user.sessionId.substring(0, 8)}...
+            <span className="hidden sm:inline">Chat/Session: </span>
+            {currentChat.id.substring(0, 8)}...
           </div>
         )}
 
