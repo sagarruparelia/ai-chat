@@ -203,7 +203,7 @@ function HomeContent() {
       {/* Status indicators */}
       <div className="fixed top-2 right-2 md:top-4 md:right-4 space-y-1 md:space-y-2 z-40 lg:absolute max-w-[calc(100vw-5rem)] md:max-w-none">
         {user && (
-          <div className="text-[10px] md:text-xs text-gray-500 bg-gray-900 px-2 py-1 md:px-3 rounded-lg truncate">
+          <div className="text-[10px] md:text-xs text-gray-300 bg-gray-800 border border-gray-700 px-2 py-1 md:px-3 rounded-lg truncate shadow-md">
             <span className="hidden sm:inline">Session: </span>
             {user.sessionId.substring(0, 8)}...
           </div>
@@ -211,15 +211,15 @@ function HomeContent() {
 
         {/* Geolocation status */}
         {geoLoading && (
-          <div className="text-[10px] md:text-xs text-yellow-500 bg-gray-900 px-2 py-1 md:px-3 rounded-lg flex items-center gap-1 md:gap-2">
-            <div className="animate-spin rounded-full h-2 w-2 md:h-3 md:w-3 border-b border-yellow-500"></div>
+          <div className="text-[10px] md:text-xs text-yellow-400 bg-gray-800 border border-yellow-600/30 px-2 py-1 md:px-3 rounded-lg flex items-center gap-1 md:gap-2 shadow-md">
+            <div className="animate-spin rounded-full h-2 w-2 md:h-3 md:w-3 border-b border-yellow-400"></div>
             <span className="hidden sm:inline">Getting location...</span>
             <span className="sm:hidden">Location...</span>
           </div>
         )}
 
         {geoError && (
-          <div className="text-[10px] md:text-xs text-red-500 bg-gray-900 px-2 py-1 md:px-3 rounded-lg">
+          <div className="text-[10px] md:text-xs text-red-400 bg-gray-800 border border-red-600/30 px-2 py-1 md:px-3 rounded-lg shadow-md">
             <div className="flex items-center gap-1 md:gap-2">
               <span>⚠</span>
               <span className="hidden sm:inline">Location error</span>
@@ -235,7 +235,7 @@ function HomeContent() {
         )}
 
         {coordinates && !geoError && (
-          <div className="text-[10px] md:text-xs text-green-500 bg-gray-900 px-2 py-1 md:px-3 rounded-lg">
+          <div className="text-[10px] md:text-xs text-green-400 bg-gray-800 border border-green-600/30 px-2 py-1 md:px-3 rounded-lg shadow-md">
             <span className="hidden sm:inline">
               ✓ Location {locationSource === 'browser' ? '(GPS)' : '(IP-based)'}
             </span>

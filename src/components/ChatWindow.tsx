@@ -53,9 +53,9 @@ export function ChatWindow({ chat, streamStatus, streamingContent }: ChatWindowP
 
   return (
     <div className="flex-1 flex flex-col bg-gray-950 min-h-0 overflow-hidden">
-      <div className="border-b border-gray-800 p-3 md:p-4 bg-gray-900 flex-shrink-0">
+      <div className="border-b border-gray-700 p-3 md:p-4 bg-gray-900 flex-shrink-0">
         <h2 className="text-base md:text-lg font-semibold text-white truncate">{chat.title}</h2>
-        <p className="text-xs md:text-sm text-gray-500">
+        <p className="text-xs md:text-sm text-gray-400">
           {new Date(chat.createdAt).toLocaleDateString()}
         </p>
       </div>
@@ -75,20 +75,24 @@ export function ChatWindow({ chat, streamStatus, streamingContent }: ChatWindowP
                 }`}
               >
                 <div
-                  className={`max-w-[85%] sm:max-w-[75%] lg:max-w-[70%] rounded-lg px-3 py-2 md:px-4 ${
+                  className={`max-w-[85%] sm:max-w-[75%] lg:max-w-[70%] rounded-lg px-3 py-2 md:px-4 shadow-lg ${
                     message.role === 'user'
                       ? 'bg-blue-600 text-white'
-                      : 'bg-gray-800 text-gray-100'
+                      : 'bg-slate-700 border border-slate-600'
                   }`}
                 >
-                  <div className="text-xs sm:text-sm prose max-w-none">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {processContent(message.content)}
-                    </ReactMarkdown>
+                  <div className={`text-xs sm:text-sm prose max-w-none ${
+                    message.role === 'user' ? 'prose-invert' : 'prose-slate'
+                  }`}>
+                    <div className="text-white">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {processContent(message.content)}
+                      </ReactMarkdown>
+                    </div>
                   </div>
                   <div
                     className={`text-[10px] sm:text-xs mt-1 ${
-                      message.role === 'user' ? 'text-blue-200' : 'text-gray-500'
+                      message.role === 'user' ? 'text-blue-200' : 'text-slate-300'
                     }`}
                   >
                     {new Date(message.timestamp).toLocaleTimeString()}
@@ -100,13 +104,15 @@ export function ChatWindow({ chat, streamStatus, streamingContent }: ChatWindowP
             {/* Streaming message */}
             {streamStatus === 'streaming' && (
               <div className="flex justify-start">
-                <div className="max-w-[85%] sm:max-w-[75%] lg:max-w-[70%] rounded-lg px-3 py-2 md:px-4 bg-gray-800 text-gray-100">
+                <div className="max-w-[85%] sm:max-w-[75%] lg:max-w-[70%] rounded-lg px-3 py-2 md:px-4 bg-slate-700 border border-slate-600 shadow-lg">
                   {streamingContent ? (
                     <>
-                      <div className="text-xs sm:text-sm prose max-w-none">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                          {processContent(streamingContent)}
-                        </ReactMarkdown>
+                      <div className="text-xs sm:text-sm prose prose-slate max-w-none">
+                        <div className="text-white">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {processContent(streamingContent)}
+                          </ReactMarkdown>
+                        </div>
                       </div>
                       <div className="flex items-center gap-1 md:gap-2 text-[10px] sm:text-xs mt-2 text-blue-400">
                         <div className="flex gap-1">
@@ -118,7 +124,7 @@ export function ChatWindow({ chat, streamStatus, streamingContent }: ChatWindowP
                       </div>
                     </>
                   ) : (
-                    <div className="flex items-center gap-1 md:gap-2 text-[10px] sm:text-xs text-gray-500">
+                    <div className="flex items-center gap-1 md:gap-2 text-[10px] sm:text-xs text-slate-300">
                       <div className="flex gap-1">
                         <span className="animate-bounce">●</span>
                         <span className="animate-bounce delay-75">●</span>
